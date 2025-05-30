@@ -61,7 +61,7 @@
         <div onClick={() => setEditing(true)} className={`cursor-pointer text-sm p-2 rounded ${statusColors[status]}`}>
           {initiative?.title ? (
             <>
-              <div className="font-semibold">{initiative.title}</div>
+              <div className="font-semibold break-words max-w-[12rem]">{initiative.title}</div>
               <div className="text-xs italic">{initiative.status}</div>
             </>
           ) : <span className="text-gray-400">(vacío)</span>}
@@ -102,6 +102,13 @@
         }
       };
 
+      const addLeader = async () => {
+        const name = prompt("Nombre del nuevo líder:");
+        if (!name?.trim()) return;
+        const { data } = await supabase.from("leaders").insert([{ name }]).select();
+        if (data) setLeaders(prev => [...prev, ...data]);
+      };
+
       if (loading) return <div className="text-xl">Cargando...</div>;
 
       return (
@@ -110,23 +117,24 @@
           <table className="table-auto border">
             <thead>
               <tr>
-                <th className="border p-2 bg-sky-200 text-center text-base font-bold">Categoría</th>
-                {leaders.map(ldr => (
-                  <th key={ldr.id} className="border p-2 bg-sky-200 text-center w-40">
-                    <div className="text-base font-bold leading-tight">{ldr.name}</div>
-                    <button className="text-red-500 text-xs mt-1"><i className="fas fa-trash"></i></button>
+                <th className="border p-2 bg-sky-200 text-center text-base font-bold">Líder</th>
+                {categories.map(cat => (
+                  <th key={cat.id} className="border p-2 bg-sky-200 text-center w-64">
+                    <div className="text-sm font-bold leading-snug break-words">{cat.name}</div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {categories.map(cat => (
-                <tr key={cat.id}>
-                  <td className="border p-2 font-semibold align-top w-48">{cat.name}</td>
-                  {leaders.map(ldr => {
+              {leaders.map(ldr => (
+                <tr key={ldr.id}>
+                  <td className="border p-2 font-semibold text-base text-sky-800">
+                    {ldr.name}
+                  </td>
+                  {categories.map(cat => {
                     const cell = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
                     return (
-                      <td key={ldr.id} className="border p-2 align-top">
+                      <td key={cat.id} className="border p-2 align-top">
                         <InitiativeCell
                           initiative={cell}
                           onSave={updated => handleSave(updated, cat.id, ldr.id)}
@@ -136,6 +144,13 @@
                   })}
                 </tr>
               ))}
+              <tr>
+                <td colSpan={categories.length + 1} className="text-center p-4">
+                  <button onClick={addLeader} className="bg-sky-500 hover:bg-sky-600 text-white py-1 px-4 rounded">
+                    + Agregar Líder
+                  </button>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
