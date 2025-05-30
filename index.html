@@ -146,7 +146,16 @@
     .overflow-auto::-webkit-scrollbar-thumb:hover {
       background: #94a3b8; /* slate-400 */
     }
-  </style>
+  
+/* === Custom visual tweaks for Leader names & Initiative titles === */
+
+
+.initiative-card-status{
+  @apply text-sm italic font-medium flex items-center;
+}
+/* ================================================================ */
+
+</style>
 </head>
 <body class="text-slate-800">
   <div id="root-container" class="flex flex-col h-screen">
@@ -163,7 +172,7 @@
     const statusConfig = {
       "No Iniciado":    { bg: "bg-slate-200", text: "text-slate-600", border: "border-slate-400", icon: "fa-regular fa-hourglass-half", name: "No Iniciado" },
       "En Desarrollo":  { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-400", icon: "fa-solid fa-gears", name: "En Desarrollo" },
-      "Primer Borrador":{ bg: "bg-sky-100",   text: "text-sky-700",   border: "border-sky-400", icon: "fa-solid fa-file-pen", name: "Primer Borrador" },
+      "Primer Borrador":{ bg: "bg-blue-200",   text: "text-sky-700",   border: "border-sky-400", icon: "fa-solid fa-file-pen", name: "Primer Borrador" },
       "Idea Presentada":{ bg: "bg-emerald-100",text: "text-emerald-700",border: "border-emerald-400", icon: "fa-solid fa-lightbulb", name: "Idea Presentada" }
     };
     const statusOrder = ["No Iniciado", "En Desarrollo", "Primer Borrador", "Idea Presentada"];
@@ -351,7 +360,7 @@
         >
           {initiative?.title ? (
             <>
-              <h4 className="font-medium text-xs line-clamp-2-sim leading-tight flex items-center">
+              <h4 className="text-lg font-semibold leading-tight flex items-center">
                 {initiative.title}
                 {/* Document link icon */}
                 {initiative.document_url && (
@@ -362,7 +371,7 @@
                   </a>
                 )}
               </h4>
-              <div className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-block self-start mt-0.5 border ${displayStyle.border} ${displayStyle.text} ${displayStyle.bg.replace('100', '200').replace('200','300').replace('slate-200','slate-300')} `}>
+              <div className={`initiative-card-status px-1.5 py-0.5 rounded-full inline-block self-start mt-0.5 border ${displayStyle.border} ${displayStyle.text} ${displayStyle.bg.replace('100', '200').replace('200','300').replace('slate-200','slate-300')} `}>
                 <i className={`fas ${displayStyle.icon} mr-1 text-[9px] opacity-70`}></i>
                 {displayStyle.name}
               </div>
@@ -697,7 +706,7 @@
                             // Alternating row colors: white and light pastel green (emerald-50)
                             <tr key={ldr.id} className={`h-[64px] ${index % 2 === 0 ? 'bg-white' : 'bg-emerald-50'} hover:bg-sky-50/40 transition-colors duration-100`}>
                               <td className="border-b border-slate-200 p-1.5 sm:p-2 font-medium text-xs text-sky-700 sticky left-0 bg-inherit z-0 shadow-sm">
-                                <div className="line-clamp-1-sim">{ldr.name}</div>
+                                <div className="line-clamp-1-sim text-lg font-semibold leading-snug flex items-center">{ldr.name}</div>
                               </td>
                               {categories.map(cat => {
                                 const cellInitiative = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
