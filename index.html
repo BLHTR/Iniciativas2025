@@ -74,7 +74,7 @@
       const [categories, setCategories] = React.useState([]);
       const [initiatives, setInitiatives] = React.useState([]);
       const [loading, setLoading] = React.useState(true);
-      const [newLeader, setNewLeader] = React.useState("");
+      const [newCategory, setNewCategory] = React.useState("");
 
       React.useEffect(() => {
         (async () => {
@@ -103,21 +103,21 @@
         }
       };
 
-      const handleRenameLeader = async (id, newName) => {
-        const { data } = await supabase.from('leaders').update({ name: newName }).eq('id', id).select();
-        if (data) setLeaders(prev => prev.map(l => l.id === id ? data[0] : l));
+      const handleRenameCategory = async (id, newName) => {
+        const { data } = await supabase.from('categories').update({ name: newName }).eq('id', id).select();
+        if (data) setCategories(prev => prev.map(c => c.id === id ? data[0] : c));
       };
 
-      const handleDeleteLeader = async (id) => {
-        await supabase.from('leaders').delete().eq('id', id);
-        setLeaders(prev => prev.filter(l => l.id !== id));
+      const handleDeleteCategory = async (id) => {
+        await supabase.from('categories').delete().eq('id', id);
+        setCategories(prev => prev.filter(c => c.id !== id));
       };
 
-      const handleAddLeader = async () => {
-        if (!newLeader.trim()) return;
-        const { data } = await supabase.from('leaders').insert([{ name: newLeader.trim() }]).select();
-        if (data) setLeaders(prev => [...prev, data[0]]);
-        setNewLeader("");
+      const handleAddCategory = async () => {
+        if (!newCategory.trim()) return;
+        const { data } = await supabase.from('categories').insert([{ name: newCategory.trim() }]).select();
+        if (data) setCategories(prev => [...prev, data[0]]);
+        setNewCategory("");
       };
 
       if (loading) return <div className="text-xl">Cargando...</div>;
@@ -127,30 +127,30 @@
           <h2 className="text-xl font-semibold mb-4">Matriz de Iniciativas</h2>
 
           <div className="mb-4 flex gap-2">
-            <input value={newLeader} onChange={e => setNewLeader(e.target.value)} placeholder="Nuevo líder" className="border rounded p-1" />
-            <button onClick={handleAddLeader} className="bg-green-500 text-white px-3 py-1 rounded">Agregar</button>
+            <input value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder="Nueva categoría" className="border rounded p-1" />
+            <button onClick={handleAddCategory} className="bg-green-500 text-white px-3 py-1 rounded">Agregar</button>
           </div>
 
           <table className="table-fixed w-full border">
             <thead>
               <tr>
-                <th className="border p-2 bg-sky-200">Categoría</th>
-                {leaders.map(l => (
-                  <th key={l.id} className="border p-2 bg-sky-200">
-                    <input value={l.name} onChange={e => handleRenameLeader(l.id, e.target.value)} className="w-full text-center text-base font-bold border-b" />
-                    <button onClick={() => handleDeleteLeader(l.id)} className="text-red-500 text-sm mt-1"><i className="fas fa-trash"></i></button>
+                <th className="border p-2 bg-sky-200">Líder</th>
+                {categories.map(c => (
+                  <th key={c.id} className="border p-2 bg-sky-200">
+                    <input value={c.name} onChange={e => handleRenameCategory(c.id, e.target.value)} className="w-full text-center text-base font-bold border-b" />
+                    <button onClick={() => handleDeleteCategory(c.id)} className="text-red-500 text-sm mt-1"><i className="fas fa-trash"></i></button>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {categories.map(cat => (
-                <tr key={cat.id}>
-                  <td className="border p-2 font-medium w-64 align-top">{cat.name}</td>
-                  {leaders.map(ldr => {
+              {leaders.map(ldr => (
+                <tr key={ldr.id}>
+                  <td className="border p-2 font-medium w-64 align-top">{ldr.name}</td>
+                  {categories.map(cat => {
                     const cell = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
                     return (
-                      <td key={ldr.id} className="border p-2 align-top">
+                      <td key={cat.id} className="border p-2 align-top">
                         <InitiativeCell
                           initiative={cell}
                           onSave={updated => handleSave(updated, cat.id, ldr.id)}
