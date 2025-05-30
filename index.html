@@ -221,18 +221,14 @@
       const [editing, setEditing] = React.useState(false);
       const [title, setTitle] = React.useState(initiative?.title || '');
       const [status, setStatus] = React.useState(initiative?.status || 'No Iniciado');
-      // documentUrl state removed as per request
       const [isSaving, setIsSaving] = React.useState(false);
-      const [showConfirmDelete, setShowConfirmDelete] = React.useState(false); // State for delete confirmation
+      const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
 
-      // Update local state when initiative prop changes
       React.useEffect(() => {
         setTitle(initiative?.title || '');
         setStatus(initiative?.status || 'No Iniciado');
-        // documentUrl state update removed
       }, [initiative]);
 
-      // Handle saving an initiative
       const handleSaveClick = async () => {
         if (!title.trim()) {
           showToast("El título no puede estar vacío.", "error");
@@ -240,7 +236,6 @@
         }
         setIsSaving(true);
         try {
-          // document_url removed from onSave
           await onSave({ ...initiative, title: title.trim(), status });
           setEditing(false);
           showToast("Iniciativa guardada con éxito.", "success");
@@ -252,14 +247,13 @@
         }
       };
 
-      // Handle deleting an initiative
       const handleDeleteClick = async () => {
-        setIsSaving(true); // Use isSaving to disable buttons during delete
+        setIsSaving(true);
         try {
           await onDelete(initiative.id);
           showToast("Iniciativa eliminada con éxito.", "success");
-          setEditing(false); // Exit edit mode after deletion
-          setShowConfirmDelete(false); // Close confirmation modal
+          setEditing(false);
+          setShowConfirmDelete(false);
         } catch (error) {
           console.error("Error deleting:", error);
           showToast("Error al eliminar la iniciativa: " + error.message, "error");
@@ -268,11 +262,9 @@
         }
       };
 
-      // Determine current styling based on status
       const currentDynamicStyle = statusConfig[status] || statusConfig["No Iniciado"];
       const displayStyle = initiative ? (statusConfig[initiative.status] || statusConfig["No Iniciado"]) : null;
 
-      // Render edit mode
       if (editing) {
         return (
           <div className={`p-1.5 rounded-md shadow-md ${currentDynamicStyle.bg} border ${currentDynamicStyle.border} space-y-1`}>
@@ -282,7 +274,6 @@
               placeholder="Título breve..."
               className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
             />
-            {/* documentUrl input field removed */}
             <select
               value={status}
               onChange={e => setStatus(e.target.value)}
@@ -300,7 +291,7 @@
               >
                 {isSaving ? <i className="fas fa-spinner fa-spin text-[10px]"></i> : <><i className="fas fa-check mr-1 text-[10px]"></i>Guardar</>}
               </button>
-              {initiative?.id && ( // Only show delete button if initiative exists (not a new placeholder)
+              {initiative?.id && (
                 <button
                   className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded py-0.5 px-1.5 text-[11px] font-medium disabled:opacity-50 flex items-center justify-center transition-all duration-150"
                   onClick={() => setShowConfirmDelete(true)}
@@ -311,14 +302,13 @@
               )}
               <button
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded py-0.5 px-1.5 text-[11px] font-medium transition-all duration-150"
-                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); /* setDocumentUrl(initiative?.document_url || ''); removed */ }}
+                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); }}
                 disabled={isSaving}
               >
                 Cancelar
               </button>
             </div>
 
-            {/* Delete Confirmation Modal */}
             {showConfirmDelete && (
               <div className="modal-overlay show" onClick={() => setShowConfirmDelete(false)}>
                 <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -341,7 +331,6 @@
         );
       }
 
-      // Render display mode
       return (
         <div
           onClick={() => setEditing(true)}
@@ -356,7 +345,6 @@
             <>
               <h4 className="text-lg font-semibold leading-tight flex items-center">
                 {initiative.title}
-                {/* Document link icon removed */}
               </h4>
               <div className={`initiative-card-status px-1.5 py-0.5 rounded-full inline-block self-start mt-0.5 border ${displayStyle.border} ${displayStyle.text} ${displayStyle.bg.replace('100', '200').replace('200','300').replace('slate-200','slate-300')} `}>
                 <i className={`fas ${displayStyle.icon} mr-1 text-[9px] opacity-70`}></i>
@@ -428,19 +416,15 @@
       const [isAdding, setIsAdding] = React.useState(false);
       const inputRef = React.useRef(null);
 
-      // Focus input when modal opens
       React.useEffect(() => {
         if (isOpen) { 
           setName(''); 
-          // Use a timeout to ensure the modal is rendered before focusing
           setTimeout(() => inputRef.current?.focus(), 50); 
         }
       }, [isOpen]);
 
-      // Do not render if not open
       if (!isOpen) return null;
 
-      // Handle form submission
       const handleSubmit = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
@@ -486,7 +470,7 @@
     }
 
     // Component to display a summary of initiatives by status
-    function InitiativeSummary({ initiatives, leaders, categories, isLoading }) { // Added leaders and categories
+    function InitiativeSummary({ initiatives, leaders, categories, isLoading }) {
       const summary = React.useMemo(() => {
         const initialSummary = statusOrder.reduce((acc, statusKey) => {
           acc[statusKey] = initiatives.filter(init => init.status === statusKey).length;
@@ -497,15 +481,13 @@
         const actualInitiativesCount = initiatives.length;
         const implicitNoIniciadoCount = totalPossibleCells - actualInitiativesCount;
 
-        // Add implicit "No Iniciado" count to the existing "No Iniciado" count
         initialSummary["No Iniciado"] = (initialSummary["No Iniciado"] || 0) + implicitNoIniciadoCount;
 
         return initialSummary;
-      }, [initiatives, leaders, categories]); // Added leaders and categories to dependencies
+      }, [initiatives, leaders, categories]);
 
-      const totalInitiatives = leaders.length * categories.length; // Total is now total possible cells
+      const totalInitiatives = leaders.length * categories.length;
       
-      // Only show summary if not loading or if there are leaders/categories to form a table
       if (isLoading || (leaders.length === 0 && categories.length === 0)) return null; 
       
       return (
@@ -515,7 +497,6 @@
             {statusOrder.map(statusKey => {
               const count = summary[statusKey] || 0;
               const config = statusConfig[statusKey];
-              // Calculate percentage based on totalPossibleCells
               const percentage = totalInitiatives > 0 ? (count / totalInitiatives * 100).toFixed(0) : 0;
               return (
                 <div key={statusKey} className={`p-1.5 rounded-md text-xs ${config.bg} ${config.text} border ${config.border}`}>
@@ -542,20 +523,17 @@
       const [loading, setLoading] = React.useState(true);
       const [error, setError] = React.useState(null);
       const [isAddLeaderModalOpen, setIsAddLeaderModalOpen] = React.useState(false);
-      const [toasts, setToasts] = React.useState([]); // State for managing toasts
+      const [toasts, setToasts] = React.useState([]);
 
-      // Function to add a new toast notification
       const showToast = (message, type = "info") => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
       };
 
-      // Function to dismiss a toast notification
       const dismissToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
       };
 
-      // Fetch initial data from Supabase
       React.useEffect(() => {
         (async () => {
           setLoading(true); setError(null);
@@ -576,28 +554,24 @@
         })();
       }, []);
 
-      // Handle saving an initiative (create or update)
       const handleSaveInitiative = async (newData, categoryId, leaderId) => {
         const existing = initiatives.find(i => i.category_id === categoryId && i.leader_id === leaderId);
         try {
             if (existing) {
-                // document_url removed from the update operation
                 const { data, error:err } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status }).eq('id', existing.id).select();
                 if (err) throw err;
                 if (data) setInitiatives(prev => prev.map(i => i.id === existing.id ? data[0] : i));
             } else {
-                // document_url removed from the insert operation
                 const { data, error:err } = await supabase.from('initiatives').insert([{ ...newData, category_id: categoryId, leader_id: leaderId }]).select();
                 if (err) throw err;
                 if (data) setInitiatives(prev => [...prev, data[0]]);
             }
         } catch (err) { 
           console.error("Error saving initiative:", err);
-          throw err; // Re-throw to be caught by InitiativeCell's error handling
+          throw err;
         }
       };
 
-      // Handle deleting an initiative
       const handleDeleteInitiative = async (initiativeId) => {
         try {
           const { error: err } = await supabase.from('initiatives').delete().eq('id', initiativeId);
@@ -605,18 +579,16 @@
           setInitiatives(prev => prev.filter(i => i.id !== initiativeId));
         } catch (err) {
           console.error("Error deleting initiative:", err);
-          throw err; // Re-throw to be caught by InitiativeCell's error handling
+          throw err;
         }
       };
 
-      // Handle adding a new leader
       const handleAddLeader = async (name) => {
         const { data, error:err } = await supabase.from("leaders").insert([{ name }]).select();
         if (err) throw err;
         if (data) setLeaders(prev => [...prev, ...data].sort((a,b) => a.name.localeCompare(b.name)));
       };
 
-      // Display error message if data loading fails
       if (error) return (
         <div className="p-4 h-full flex items-center justify-center">
           <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md max-w-md" role="alert">
@@ -660,7 +632,6 @@
               <div className="flex-grow overflow-hidden bg-white shadow-lg rounded-lg">
                 <div className="overflow-auto h-full"> 
                   {(categories.length === 0 && leaders.length === 0 && !loading) ? (
-                    // Empty state message when no data
                     <div className="h-full flex flex-col items-center justify-center text-slate-500 p-6">
                       <i className="fas fa-folder-open fa-3x mb-3 text-sky-500"></i>
                       <p className="text-lg font-medium">¡Todo listo para empezar!</p>
@@ -671,18 +642,17 @@
                       >
                         <i className="fas fa-user-plus mr-2"></i>
                         Comenzar agregando un Líder
-                                              </button>
+                      </button>
                     </div>
                   ) : (
-                    // This is the fix: use a ternary operator to explicitly return the table or null
                     (categories.length > 0 || leaders.length > 0) ? (
-                      // Usar table-fixed para que los anchos de columna sean respetados
                       <table className="table-fixed border-collapse w-full min-w-[600px] sm:min-w-[700px]">
                         <thead className="sticky top-0 z-20 bg-white shadow-sm">
                           <tr>
-                            <th className="border-b-2 border-sky-200 p-2 bg-sky-50 text-left text-[10px] sm:text-[11px] font-semibold uppercase text-sky-700 tracking-wider sticky left-0 z-10 w-[150px] sm:w-[170px] shadow-sm">Líder</th>
+                            {/* Improved Leader Header Styling */}
+                            <th className="border-b-2 border-r border-sky-200 py-3 px-2 bg-sky-50 text-left text-sm font-bold uppercase text-sky-700 tracking-wider sticky left-0 z-10 w-[150px] sm:w-[170px] shadow-sm">Líder</th>
                             {categories.map(cat => (
-                              <th key={cat.id} className="border-b-2 border-sky-200 p-2 bg-sky-50 text-left text-[10px] sm:text-[11px] font-semibold uppercase text-sky-700 tracking-wider w-[170px] sm:w-[200px] break-words">
+                              <th key={cat.id} className="border-b-2 border-r border-sky-200 py-3 px-2 bg-sky-50 text-left text-sm font-bold uppercase text-sky-700 tracking-wider w-[170px] sm:w-[200px] break-words">
                                 {cat.name} 
                               </th>
                             ))}
@@ -690,16 +660,16 @@
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {leaders.map((ldr, index) => (
-                            // Alternating row colors: white and light pastel green (emerald-50)
                             <tr key={ldr.id} className={`h-[64px] ${index % 2 === 0 ? 'bg-white' : 'bg-emerald-50'} hover:bg-sky-50/40 transition-colors duration-100`}>
-                              <td className="border-b border-slate-200 p-1.5 sm:p-2 font-medium text-xs text-sky-700 sticky left-0 bg-inherit z-0 shadow-sm">
-                                {/* Leader name font size reduced from text-lg to text-base */}
+                              {/* Improved Leader Name Cell Styling */}
+                              <td className="border-b border-r border-slate-200 py-2.5 px-2 font-medium text-xs text-sky-700 sticky left-0 bg-inherit z-0 shadow-sm">
                                 <div className="line-clamp-1-sim text-base font-semibold leading-snug flex items-center">{ldr.name}</div>
                               </td>
                               {categories.map(cat => {
                                 const cellInitiative = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
                                 return (
-                                  <td key={cat.id} className="border-b border-slate-200 p-1 align-top">
+                                  <td key={cat.id} className="border-b border-r border-slate-200 p-1.5 align-top">
+                                    {/* Improved Initiative Cell Styling */}
                                     <InitiativeCell
                                       initiative={cellInitiative}
                                       onSave={updatedData => handleSaveInitiative(updatedData, cat.id, ldr.id)}
@@ -713,7 +683,7 @@
                           ))}
                         </tbody>
                       </table>
-                    ) : null // Explicitly return null if no categories/leaders and not loading
+                    ) : null
                   )}
                 </div>
               </div>
