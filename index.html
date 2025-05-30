@@ -38,7 +38,7 @@
   </script>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -212,6 +212,8 @@
       const [editing, setEditing] = React.useState(false);
       const [title, setTitle] = React.useState(initiative?.title || '');
       const [status, setStatus] = React.useState(initiative?.status || 'No Iniciado');
+      // New state for document URL
+      const [documentUrl, setDocumentUrl] = React.useState(initiative?.document_url || '');
       const [isSaving, setIsSaving] = React.useState(false);
       const [showConfirmDelete, setShowConfirmDelete] = React.useState(false); // State for delete confirmation
 
@@ -219,6 +221,7 @@
       React.useEffect(() => {
         setTitle(initiative?.title || '');
         setStatus(initiative?.status || 'No Iniciado');
+        setDocumentUrl(initiative?.document_url || ''); // Update document URL state
       }, [initiative]);
 
       // Handle saving an initiative
@@ -229,7 +232,8 @@
         }
         setIsSaving(true);
         try {
-          await onSave({ ...initiative, title: title.trim(), status });
+          // Pass document_url to onSave
+          await onSave({ ...initiative, title: title.trim(), status, document_url: documentUrl.trim() });
           setEditing(false);
           showToast("Iniciativa guardada con éxito.", "success");
         } catch (error) {
@@ -270,6 +274,12 @@
               placeholder="Título breve..."
               className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
             />
+            <input
+              value={documentUrl}
+              onChange={e => setDocumentUrl(e.target.value)}
+              placeholder="URL del documento (opcional)"
+              className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
+            />
             <select
               value={status}
               onChange={e => setStatus(e.target.value)}
@@ -298,7 +308,7 @@
               )}
               <button
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded py-0.5 px-1.5 text-[11px] font-medium transition-all duration-150"
-                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); }}
+                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); setDocumentUrl(initiative?.document_url || ''); }}
                 disabled={isSaving}
               >
                 Cancelar
@@ -341,8 +351,16 @@
         >
           {initiative?.title ? (
             <>
-              <h4 className="font-medium text-xs line-clamp-2-sim leading-tight">
+              <h4 className="font-medium text-xs line-clamp-2-sim leading-tight flex items-center">
                 {initiative.title}
+                {/* Document link icon */}
+                {initiative.document_url && (
+                  <a href={initiative.document_url} target="_blank" rel="noopener noreferrer" 
+                     className="ml-1 text-sky-500 hover:text-sky-700 transition-colors" 
+                     title="Ver documento" onClick={e => e.stopPropagation()}>
+                    <i className="fas fa-file-alt text-[10px]"></i>
+                  </a>
+                )}
               </h4>
               <div className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-block self-start mt-0.5 border ${displayStyle.border} ${displayStyle.text} ${displayStyle.bg.replace('100', '200').replace('200','300').replace('slate-200','slate-300')} `}>
                 <i className={`fas ${displayStyle.icon} mr-1 text-[9px] opacity-70`}></i>
@@ -567,11 +585,13 @@
         const existing = initiatives.find(i => i.category_id === categoryId && i.leader_id === leaderId);
         try {
             if (existing) {
-                const { data, error:err } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status }).eq('id', existing.id).select();
+                // Include document_url in the update operation
+                const { data, error:err } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status, document_url: newData.document_url }).eq('id', existing.id).select();
                 if (err) throw err;
                 if (data) setInitiatives(prev => prev.map(i => i.id === existing.id ? data[0] : i));
             } else {
-                const { data, error:err } = await supabase.from('initiatives').insert([{ ...newData, category_id: categoryId, leader_id: leaderId }]).select();
+                // Include document_url in the insert operation
+                const { data, error:err } = await supabase.from('initiatives').insert([{ ...newData, category_id: categoryId, leader_id: leaderId, document_url: newData.document_url }]).select();
                 if (err) throw err;
                 if (data) setInitiatives(prev => [...prev, data[0]]);
             }
