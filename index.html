@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Iniciativa Líderes 2025</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-sky-100 text-slate-800 min-h-screen flex flex-col items-center p-6">
+  <h1 class="text-3xl font-bold mb-4">Gestión de Iniciativa Líderes 2025</h1>
+  <div id="root" class="w-full flex justify-center overflow-x-auto"></div>
+
+  <script type="text/babel">
+    const SUPABASE_URL = 'https://jgdtynpwzhzisnxsntqa.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnZHR5bnB3emh6aXNueHNudHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NDc3MjksImV4cCI6MjA2NDEyMzcyOX0.Ja6ZElovtjXrunF8-Hs3bEb02vSC1Y4YSSJTdO1KYIQ';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const statusColors = {
+      "No Iniciado": "bg-gray-300",
+      "En Desarrollo": "bg-yellow-200",
+      "Primer Borrador": "bg-blue-200",
+      "Idea Presentada": "bg-green-200"
+    };
+
+    function InitiativeCell({ initiative, onSave }) {
+      const [editing, setEditing] = React.useState(false);
+      const [title, setTitle] = React.useState(initiative?.title || '');
+      const [status, setStatus] = React.useState(initiative?.status || 'No Iniciado');
+
+      React.useEffect(() => {
+        setTitle(initiative?.title || '');
+        setStatus(initiative?.status || 'No Iniciado');
+      }, [initiative]);
+
+      const handleSave = async () => {
+        if (!title.trim()) return;
+        await onSave({ ...initiative, title: title.trim(), status });
+        setEditing(false);
+      };
+
+      if (editing) {
+        return (
+          <div className="space-y-2">
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título" className="w-full border rounded p-1 text-sm" />
+            <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border rounded p-1 text-sm">
+              {Object.keys(statusColors).map(opt => (
+                <option key={opt}>{opt}</option>
+              ))}
+            </select>
+            <button className="w-full bg-sky-600 text-white rounded p-1 text-sm" onClick={handleSave}>Guardar</button>
+          </div>
+        );
+      }
+
+      return (
+        <div onClick={() => setEditing(true)} className={`cursor-pointer text-sm p-2 rounded ${statusColors[status]}`}>
+          {initiative?.title ? (
+            <>
+              <div className="font-semibold">{initiative.title}</div>
+              <div className="text-xs italic">{initiative.status}</div>
+            </>
+          ) : <span className="text-gray-400">(vacío)</span>}
+        </div>
+      );
+    }
+
+    function App() {
+      const [leaders, setLeaders] = React.useState([]);
+      const [categories, setCategories] = React.useState([]);
+      const [initiatives, setInitiatives] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+      const [newLeader, setNewLeader] = React.useState("");
+
+      React.useEffect(() => {
+        (async () => {
+          const [leadersRes, categoriesRes, initiativesRes] = await Promise.all([
+            supabase.from('leaders').select('*'),
+            supabase.from('categories').select('*'),
+            supabase.from('initiatives').select('*')
+          ]);
+
+          if (!leadersRes.error) setLeaders(leadersRes.data || []);
+          if (!categoriesRes.error) setCategories(categoriesRes.data || []);
+          if (!initiativesRes.error) setInitiatives(initiativesRes.data || []);
+
+          setLoading(false);
+        })();
+      }, []);
+
+      const handleSave = async (newData, categoryId, leaderId) => {
+        const existing = initiatives.find(i => i.category_id === categoryId && i.leader_id === leaderId);
+        if (existing) {
+          const { data } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status }).eq('id', existing.id).select();
+          if (data) setInitiatives(prev => prev.map(i => i.id === existing.id ? data[0] : i));
+        } else {
+          const { data } = await supabase.from('initiatives').insert([{ title: newData.title, status: newData.status, category_id: categoryId, leader_id: leaderId }]).select();
+          if (data) setInitiatives(prev => [...prev, data[0]]);
+        }
+      };
+
+      const handleRenameLeader = async (id, newName) => {
+        const { data } = await supabase.from('leaders').update({ name: newName }).eq('id', id).select();
+        if (data) setLeaders(prev => prev.map(l => l.id === id ? data[0] : l));
+      };
+
+      const handleDeleteLeader = async (id) => {
+        await supabase.from('leaders').delete().eq('id', id);
+        setLeaders(prev => prev.filter(l => l.id !== id));
+      };
+
+      const handleAddLeader = async () => {
+        if (!newLeader.trim()) return;
+        const { data } = await supabase.from('leaders').insert([{ name: newLeader.trim() }]).select();
+        if (data) setLeaders(prev => [...prev, data[0]]);
+        setNewLeader("");
+      };
+
+      if (loading) return <div className="text-xl">Cargando...</div>;
+
+      return (
+        <div className="bg-white p-4 shadow rounded w-full max-w-6xl">
+          <h2 className="text-xl font-semibold mb-4">Matriz de Iniciativas</h2>
+
+          <div className="mb-4 flex gap-2">
+            <input value={newLeader} onChange={e => setNewLeader(e.target.value)} placeholder="Nuevo líder" className="border rounded p-1" />
+            <button onClick={handleAddLeader} className="bg-green-500 text-white px-3 py-1 rounded">Agregar</button>
+          </div>
+
+          <table className="table-fixed w-full border">
+            <thead>
+              <tr>
+                <th className="border p-2 bg-sky-200">Categoría</th>
+                {leaders.map(l => (
+                  <th key={l.id} className="border p-2 bg-sky-200">
+                    <input value={l.name} onChange={e => handleRenameLeader(l.id, e.target.value)} className="w-full text-center text-base font-bold border-b" />
+                    <button onClick={() => handleDeleteLeader(l.id)} className="text-red-500 text-sm mt-1"><i className="fas fa-trash"></i></button>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map(cat => (
+                <tr key={cat.id}>
+                  <td className="border p-2 font-medium w-64 align-top">{cat.name}</td>
+                  {leaders.map(ldr => {
+                    const cell = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
+                    return (
+                      <td key={ldr.id} className="border p-2 align-top">
+                        <InitiativeCell
+                          initiative={cell}
+                          onSave={updated => handleSave(updated, cat.id, ldr.id)}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    const rootElement = document.getElementById("root");
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
