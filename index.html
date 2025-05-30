@@ -1,163 +1,733 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestión de Iniciativa Líderes 2025</title>
+  <meta name="description" content="Plataforma de gestión de iniciativas para el programa Líderes 2025.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+  
+  <title>Gestión de Iniciativa Líderes 2025 - Final</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            sky: tailwind.colors.sky,
+            amber: tailwind.colors.amber,
+            emerald: tailwind.colors.emerald,
+            slate: tailwind.colors.slate,
+            brand: {
+              'primary': tailwind.colors.sky[600],
+              'secondary': tailwind.colors.cyan[500],
+            }
+          },
+        },
+      },
+      plugins: [],
+    }
+  </script>
+  
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    /* Base styles for HTML, body, and root container */
+    html, body, #root-container {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; 
+    }
+    /* Set Inter font and a subtle gradient background */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-image: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #cffafe 100%);
+    }
+    /* Custom line-clamp for text truncation */
+    .line-clamp-2-sim {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; text-overflow: ellipsis; max-height: calc(1.35em * 2); line-height: 1.35em; 
+    }
+    .line-clamp-1-sim {
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+      overflow: hidden; text-overflow: ellipsis; max-height: 1.35em; line-height: 1.35em;
+    }
+    /* Modal overlay for darkening background */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6); display: flex;
+      align-items: center; justify-content: center; z-index: 50;
+      opacity: 0; /* Start hidden for animation */
+      transition: opacity 0.2s ease-out; /* Smooth fade-in */
+    }
+    .modal-overlay.show {
+      opacity: 1; /* Show when 'show' class is present */
+    }
+    /* Modal content styling */
+    .modal-content {
+      background-color: white; padding: 1.5rem; border-radius: 0.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      width: 90%; max-width: 450px;
+      transform: translateY(-20px); /* Start slightly above for animation */
+      opacity: 0; /* Start hidden for animation */
+      transition: all 0.2s ease-out; /* Smooth slide and fade-in */
+    }
+    .modal-overlay.show .modal-content {
+      transform: translateY(0); /* Slide to normal position */
+      opacity: 1; /* Fade in */
+    }
+    /* Skeleton shimmer animation */
+    @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+    .skeleton-shimmer {
+      background: linear-gradient(to right, #e2e8f0 8%, #f1f5f9 18%, #e2e8f0 33%);
+      background-size: 2000px 100%;
+      animation: shimmer 1.5s infinite linear;
+    }
+
+    /* Toast notification styles */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      padding: 0.75rem 1rem;
+      border-radius: 0.375rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .toast.hide {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    .toast-success { background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+    .toast-error { background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+    .toast-info { background-color: #e0f2fe; color: #0c4a6e; border: 1px solid #38b2ac; } /* cyan-100, cyan-800 */
+
+    /* Custom scrollbar for better aesthetics */
+    .overflow-auto::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .overflow-auto::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .overflow-auto::-webkit-scrollbar-thumb {
+      background: #cbd5e1; /* slate-300 */
+      border-radius: 10px;
+    }
+    .overflow-auto::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8; /* slate-400 */
+    }
+  </style>
 </head>
-<body class="bg-sky-100 text-slate-800 min-h-screen flex flex-col items-center p-6">
-  <h1 class="text-3xl font-bold mb-4">Gestión de Iniciativa Líderes 2025</h1>
-  <div id="root" class="w-full flex justify-center overflow-x-auto"></div>
+<body class="text-slate-800">
+  <div id="root-container" class="flex flex-col h-screen">
+    {/* React content will be rendered here */}
+  </div>
 
   <script type="text/babel">
+    // Supabase configuration
     const SUPABASE_URL = 'https://jgdtynpwzhzisnxsntqa.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnZHR5bnB3emh6aXNueHNudHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NDc3MjksImV4cCI6MjA2NDEyMzcyOX0.Ja6ZElovtjXrunF8-Hs3bEb02vSC1Y4YSSJTdO1KYIQ';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const statusColors = {
-      "No Iniciado": "bg-gray-300",
-      "En Desarrollo": "bg-yellow-200",
-      "Primer Borrador": "bg-blue-200",
-      "Idea Presentada": "bg-green-200"
+    // Configuration for initiative statuses
+    const statusConfig = {
+      "No Iniciado":    { bg: "bg-slate-200", text: "text-slate-600", border: "border-slate-400", icon: "fa-regular fa-hourglass-half", name: "No Iniciado" },
+      "En Desarrollo":  { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-400", icon: "fa-solid fa-gears", name: "En Desarrollo" },
+      "Primer Borrador":{ bg: "bg-sky-100",   text: "text-sky-700",   border: "border-sky-400", icon: "fa-solid fa-file-pen", name: "Primer Borrador" },
+      "Idea Presentada":{ bg: "bg-emerald-100",text: "text-emerald-700",border: "border-emerald-400", icon: "fa-solid fa-lightbulb", name: "Idea Presentada" }
     };
+    const statusOrder = ["No Iniciado", "En Desarrollo", "Primer Borrador", "Idea Presentada"];
 
-    function InitiativeCell({ initiative, onSave }) {
+    // Toast Notification Component
+    function Toast({ message, type, id, onDismiss }) {
+      const [isVisible, setIsVisible] = React.useState(false);
+
+      React.useEffect(() => {
+        // Show toast
+        setIsVisible(true);
+        // Hide toast after 3 seconds
+        const timer = setTimeout(() => {
+          setIsVisible(false);
+          // Allow fade-out animation to complete before removing from DOM
+          setTimeout(() => onDismiss(id), 300); 
+        }, 3000);
+        return () => clearTimeout(timer);
+      }, []);
+
+      const icon = {
+        success: "fa-circle-check",
+        error: "fa-circle-xmark",
+        info: "fa-circle-info"
+      }[type];
+
+      const typeClass = {
+        success: "toast-success",
+        error: "toast-error",
+        info: "toast-info"
+      }[type];
+
+      return (
+        <div className={`toast ${typeClass} ${isVisible ? 'show' : 'hide'}`}>
+          <i className={`fas ${icon} text-lg`}></i>
+          <span className="text-sm font-medium">{message}</span>
+          <button onClick={() => { setIsVisible(false); setTimeout(() => onDismiss(id), 300); }} className="ml-auto text-current opacity-70 hover:opacity-100">
+            <i className="fas fa-xmark"></i>
+          </button>
+        </div>
+      );
+    }
+
+    // Initiative Cell Component for displaying and editing initiatives
+    function InitiativeCell({ initiative, onSave, onDelete, showToast }) {
       const [editing, setEditing] = React.useState(false);
       const [title, setTitle] = React.useState(initiative?.title || '');
       const [status, setStatus] = React.useState(initiative?.status || 'No Iniciado');
+      const [isSaving, setIsSaving] = React.useState(false);
+      const [showConfirmDelete, setShowConfirmDelete] = React.useState(false); // State for delete confirmation
 
+      // Update local state when initiative prop changes
       React.useEffect(() => {
         setTitle(initiative?.title || '');
         setStatus(initiative?.status || 'No Iniciado');
       }, [initiative]);
 
-      const handleSave = async () => {
-        if (!title.trim()) return;
-        await onSave({ ...initiative, title: title.trim(), status });
-        setEditing(false);
+      // Handle saving an initiative
+      const handleSaveClick = async () => {
+        if (!title.trim()) {
+          showToast("El título no puede estar vacío.", "error");
+          return;
+        }
+        setIsSaving(true);
+        try {
+          await onSave({ ...initiative, title: title.trim(), status });
+          setEditing(false);
+          showToast("Iniciativa guardada con éxito.", "success");
+        } catch (error) {
+          console.error("Error saving:", error);
+          showToast("Error al guardar la iniciativa: " + error.message, "error");
+        } finally {
+          setIsSaving(false);
+        }
       };
 
+      // Handle deleting an initiative
+      const handleDeleteClick = async () => {
+        setIsSaving(true); // Use isSaving to disable buttons during delete
+        try {
+          await onDelete(initiative.id);
+          showToast("Iniciativa eliminada con éxito.", "success");
+          setEditing(false); // Exit edit mode after deletion
+          setShowConfirmDelete(false); // Close confirmation modal
+        } catch (error) {
+          console.error("Error deleting:", error);
+          showToast("Error al eliminar la iniciativa: " + error.message, "error");
+        } finally {
+          setIsSaving(false);
+        }
+      };
+
+      // Determine current styling based on status
+      const currentDynamicStyle = statusConfig[status] || statusConfig["No Iniciado"];
+      const displayStyle = initiative ? (statusConfig[initiative.status] || statusConfig["No Iniciado"]) : null;
+
+      // Render edit mode
       if (editing) {
         return (
-          <div className="space-y-2">
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título" className="w-full border rounded p-1 text-sm" />
-            <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border rounded p-1 text-sm">
-              {Object.keys(statusColors).map(opt => (
-                <option key={opt}>{opt}</option>
+          <div className={`p-1.5 rounded-md shadow-md ${currentDynamicStyle.bg} border ${currentDynamicStyle.border} space-y-1`}>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Título breve..."
+              className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
+            />
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
+            >
+              {statusOrder.map(opt => (
+                <option key={opt} value={opt}>{statusConfig[opt].name}</option>
               ))}
             </select>
-            <button className="w-full bg-sky-600 text-white rounded p-1 text-sm" onClick={handleSave}>Guardar</button>
+            <div className="flex gap-1 mt-0.5">
+              <button
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded py-0.5 px-1.5 text-[11px] font-medium disabled:opacity-50 flex items-center justify-center transition-all duration-150"
+                onClick={handleSaveClick}
+                disabled={isSaving || !title.trim()}
+              >
+                {isSaving ? <i className="fas fa-spinner fa-spin text-[10px]"></i> : <><i className="fas fa-check mr-1 text-[10px]"></i>Guardar</>}
+              </button>
+              {initiative?.id && ( // Only show delete button if initiative exists (not a new placeholder)
+                <button
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded py-0.5 px-1.5 text-[11px] font-medium disabled:opacity-50 flex items-center justify-center transition-all duration-150"
+                  onClick={() => setShowConfirmDelete(true)}
+                  disabled={isSaving}
+                >
+                  <i className="fas fa-trash-alt mr-1 text-[10px]"></i>Eliminar
+                </button>
+              )}
+              <button
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded py-0.5 px-1.5 text-[11px] font-medium transition-all duration-150"
+                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); }}
+                disabled={isSaving}
+              >
+                Cancelar
+              </button>
+            </div>
+
+            {/* Delete Confirmation Modal */}
+            {showConfirmDelete && (
+              <div className="modal-overlay show" onClick={() => setShowConfirmDelete(false)}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                  <h3 className="text-lg font-semibold text-slate-700 mb-3">Confirmar Eliminación</h3>
+                  <p className="text-sm text-slate-600 mb-4">¿Estás seguro de que quieres eliminar la iniciativa "{initiative.title}"?</p>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setShowConfirmDelete(false)} disabled={isSaving}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md py-1.5 px-3 text-sm font-medium transition-all duration-150">
+                      Cancelar
+                    </button>
+                    <button type="button" onClick={handleDeleteClick} disabled={isSaving}
+                      className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1.5 px-3 rounded-md text-sm disabled:opacity-60 flex items-center min-w-[80px] justify-center transition-all duration-150">
+                      {isSaving ? <i className="fas fa-spinner fa-spin"></i> : "Eliminar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       }
 
+      // Render display mode
       return (
-        <div onClick={() => setEditing(true)} className={`cursor-pointer text-sm p-2 rounded ${statusColors[status]}`}>
+        <div
+          onClick={() => setEditing(true)}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !editing && setEditing(true)}
+          tabIndex={0} role="button"
+          aria-label={initiative?.title ? `Editar: ${initiative.title}` : "Añadir Iniciativa"}
+          className={`cursor-pointer p-1.5 rounded-md min-h-[56px] flex flex-col justify-between transition-all duration-100 ease-in-out 
+                      hover:shadow-md hover:ring-1 hover:ring-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-500
+                      ${initiative?.title ? (displayStyle.bg + ' ' + displayStyle.text + ' border ' + displayStyle.border) : 'bg-slate-50/70 hover:bg-slate-100 border border-dashed border-slate-300 hover:border-sky-400'}`}
+        >
           {initiative?.title ? (
             <>
-              <div className="font-semibold break-words max-w-[12rem]">{initiative.title}</div>
-              <div className="text-xs italic">{initiative.status}</div>
+              <h4 className="font-medium text-xs line-clamp-2-sim leading-tight">
+                {initiative.title}
+              </h4>
+              <div className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-block self-start mt-0.5 border ${displayStyle.border} ${displayStyle.text} ${displayStyle.bg.replace('100', '200').replace('200','300').replace('slate-200','slate-300')} `}>
+                <i className={`fas ${displayStyle.icon} mr-1 text-[9px] opacity-70`}></i>
+                {displayStyle.name}
+              </div>
             </>
-          ) : <span className="text-gray-400">(vacío)</span>}
+          ) : (
+            <div className="text-slate-400/80 h-full flex flex-col items-center justify-center text-center py-0.5 transition-colors duration-150">
+              <i className="fas fa-plus-circle text-base mb-0.5 text-sky-500 opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-transform"></i>
+              <span className="text-[10px] font-medium">Añadir Iniciativa</span>
+            </div>
+          )}
         </div>
       );
     }
 
-    function App() {
-      const [leaders, setLeaders] = React.useState([]);
-      const [categories, setCategories] = React.useState([]);
-      const [initiatives, setInitiatives] = React.useState([]);
-      const [loading, setLoading] = React.useState(true);
-
-      React.useEffect(() => {
-        (async () => {
-          const [leadersRes, categoriesRes, initiativesRes] = await Promise.all([
-            supabase.from('leaders').select('*'),
-            supabase.from('categories').select('*'),
-            supabase.from('initiatives').select('*')
-          ]);
-
-          if (!leadersRes.error) setLeaders(leadersRes.data || []);
-          if (!categoriesRes.error) setCategories(categoriesRes.data || []);
-          if (!initiativesRes.error) setInitiatives(initiativesRes.data || []);
-
-          setLoading(false);
-        })();
-      }, []);
-
-      const handleSave = async (newData, categoryId, leaderId) => {
-        const existing = initiatives.find(i => i.category_id === categoryId && i.leader_id === leaderId);
-        if (existing) {
-          const { data } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status }).eq('id', existing.id).select();
-          if (data) setInitiatives(prev => prev.map(i => i.id === existing.id ? data[0] : i));
-        } else {
-          const { data } = await supabase.from('initiatives').insert([{ title: newData.title, status: newData.status, category_id: categoryId, leader_id: leaderId }]).select();
-          if (data) setInitiatives(prev => [...prev, data[0]]);
-        }
-      };
-
-      const addLeader = async () => {
-        const name = prompt("Nombre del nuevo líder:");
-        if (!name?.trim()) return;
-        const { data } = await supabase.from("leaders").insert([{ name }]).select();
-        if (data) setLeaders(prev => [...prev, ...data]);
-      };
-
-      if (loading) return <div className="text-xl">Cargando...</div>;
-
+    // Skeleton loader for the table
+    function TableSkeleton({ numCategories = 3, numLeaders = 6 }) {
       return (
-        <div className="bg-white p-4 shadow rounded w-full max-w-7xl overflow-x-auto">
-          <h2 className="text-xl font-semibold mb-4">Matriz de Iniciativas</h2>
-          <table className="table-auto border">
+        <div className="bg-white p-3 sm:p-4 shadow-lg rounded-lg w-full overflow-x-auto">
+          <div className="h-5 bg-slate-200 skeleton-shimmer rounded mb-3 w-1/2"></div>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-slate-200 skeleton-shimmer rounded-md"></div>)}
+          </div>
+          <h2 className="text-lg font-semibold text-slate-600 mb-2 h-6 bg-slate-200 skeleton-shimmer w-1/3 rounded"></h2>
+          <table className="table-fixed border-collapse w-full">
             <thead>
               <tr>
-                <th className="border p-2 bg-sky-200 text-center text-base font-bold">Líder</th>
-                {categories.map(cat => (
-                  <th key={cat.id} className="border p-2 bg-sky-200 text-center w-64">
-                    <div className="text-sm font-bold leading-snug break-words">{cat.name}</div>
+                <th className="border-b-2 border-sky-200 p-2 bg-sky-50 text-left text-[11px] font-semibold uppercase text-sky-700 tracking-wider w-[150px] sm:w-[180px]">
+                  <div className="h-3 bg-slate-300 skeleton-shimmer rounded w-16"></div>
+                </th>
+                {[...Array(numCategories)].map((_, i) => (
+                  <th key={i} className="border-b-2 border-sky-200 p-2 bg-sky-50 text-left text-[11px] font-semibold uppercase text-sky-700 tracking-wider w-[180px] sm:w-[220px]">
+                    <div className="h-3 bg-slate-300 skeleton-shimmer rounded w-3/4 mb-1"></div>
+                    <div className="h-3 bg-slate-300 skeleton-shimmer rounded w-1/2"></div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {leaders.map(ldr => (
-                <tr key={ldr.id}>
-                  <td className="border p-2 font-semibold text-base text-sky-800">
-                    {ldr.name}
+              {[...Array(numLeaders)].map((_, rowIndex) => (
+                <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                  <td className="border-b border-slate-200 p-2">
+                    <div className="h-3 bg-slate-300 skeleton-shimmer rounded w-20"></div>
                   </td>
-                  {categories.map(cat => {
-                    const cell = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
-                    return (
-                      <td key={cat.id} className="border p-2 align-top">
-                        <InitiativeCell
-                          initiative={cell}
-                          onSave={updated => handleSave(updated, cat.id, ldr.id)}
-                        />
-                      </td>
-                    );
-                  })}
+                  {[...Array(numCategories)].map((_, colIndex) => (
+                    <td key={colIndex} className="border-b border-slate-200 p-1 align-top">
+                      <div className="h-10 bg-slate-200 skeleton-shimmer rounded-md"></div>
+                    </td>
+                  ))}
                 </tr>
               ))}
+            </tbody>
+            <tfoot className="sticky bottom-0 bg-white">
               <tr>
-                <td colSpan={categories.length + 1} className="text-center p-4">
-                  <button onClick={addLeader} className="bg-sky-500 hover:bg-sky-600 text-white py-1 px-4 rounded">
-                    + Agregar Líder
-                  </button>
+                <td colSpan={numCategories + 1} className="text-center p-3">
+                  <div className="h-7 bg-slate-200 skeleton-shimmer rounded w-28 mx-auto"></div>
                 </td>
               </tr>
-            </tbody>
+            </tfoot>
           </table>
         </div>
       );
     }
+    
+    // Modal for adding a new leader
+    function AddLeaderModal({ isOpen, onClose, onAddLeader, showToast }) {
+      const [name, setName] = React.useState('');
+      const [isAdding, setIsAdding] = React.useState(false);
+      const inputRef = React.useRef(null);
 
-    const rootElement = document.getElementById("root");
+      // Focus input when modal opens
+      React.useEffect(() => {
+        if (isOpen) { 
+          setName(''); 
+          // Use a timeout to ensure the modal is rendered before focusing
+          setTimeout(() => inputRef.current?.focus(), 50); 
+        }
+      }, [isOpen]);
+
+      // Do not render if not open
+      if (!isOpen) return null;
+
+      // Handle form submission
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) {
+          showToast("El nombre del líder no puede estar vacío.", "error");
+          return;
+        }
+        setIsAdding(true);
+        try {
+          await onAddLeader(name.trim());
+          showToast("Líder agregado con éxito.", "success");
+          onClose(); 
+        } catch (error) { 
+          showToast("Error al agregar líder: " + error.message, "error");
+        } finally { 
+          setIsAdding(false); 
+        }
+      };
+
+      return (
+        <div className={`modal-overlay ${isOpen ? 'show' : ''}`} onClick={onClose}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-700 mb-3">Nuevo Líder</h3>
+            <form onSubmit={handleSubmit}>
+              <input
+                ref={inputRef} type="text" value={name} onChange={e => setName(e.target.value)}
+                placeholder="Nombre del líder"
+                className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none mb-3"
+              />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={onClose} disabled={isAdding}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md py-1.5 px-3 text-sm font-medium transition-all duration-150">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isAdding || !name.trim()}
+                  className="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1.5 px-3 rounded-md text-sm disabled:opacity-60 flex items-center min-w-[80px] justify-center transition-all duration-150">
+                  {isAdding ? <i className="fas fa-spinner fa-spin"></i> : "Agregar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // Component to display a summary of initiatives by status
+    function InitiativeSummary({ initiatives, leaders, categories, isLoading }) { // Added leaders and categories
+      const summary = React.useMemo(() => {
+        const initialSummary = statusOrder.reduce((acc, statusKey) => {
+          acc[statusKey] = initiatives.filter(init => init.status === statusKey).length;
+          return acc;
+        }, {});
+
+        const totalPossibleCells = leaders.length * categories.length;
+        const actualInitiativesCount = initiatives.length;
+        const implicitNoIniciadoCount = totalPossibleCells - actualInitiativesCount;
+
+        // Add implicit "No Iniciado" count to the existing "No Iniciado" count
+        initialSummary["No Iniciado"] = (initialSummary["No Iniciado"] || 0) + implicitNoIniciadoCount;
+
+        return initialSummary;
+      }, [initiatives, leaders, categories]); // Added leaders and categories to dependencies
+
+      const totalInitiatives = leaders.length * categories.length; // Total is now total possible cells
+      
+      // Only show summary if not loading or if there are leaders/categories to form a table
+      if (isLoading || (leaders.length === 0 && categories.length === 0)) return null; 
+      
+      return (
+        <div className="bg-white shadow-md rounded-lg p-2.5 mb-2.5">
+          <h3 className="text-sm font-semibold text-slate-600 mb-1.5">Resumen de Iniciativas ({totalInitiatives} en total)</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {statusOrder.map(statusKey => {
+              const count = summary[statusKey] || 0;
+              const config = statusConfig[statusKey];
+              // Calculate percentage based on totalPossibleCells
+              const percentage = totalInitiatives > 0 ? (count / totalInitiatives * 100).toFixed(0) : 0;
+              return (
+                <div key={statusKey} className={`p-1.5 rounded-md text-xs ${config.bg} ${config.text} border ${config.border}`}>
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className="font-semibold"><i className={`fas ${config.icon} mr-1 opacity-80 text-[10px]`}></i>{config.name}</span>
+                    <span className="font-bold text-sm">{count}</span>
+                  </div>
+                  <div className="w-full bg-slate-300/70 rounded-full h-1">
+                    <div className={`${config.bg.replace('100','500').replace('200','500')} h-1 rounded-full`} style={{ width: `${percentage}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Main Application Component
+    function App() {
+      const [leaders, setLeaders] = React.useState([]);
+      const [categories, setCategories] = React.useState([]);
+      const [initiatives, setInitiatives] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+      const [isAddLeaderModalOpen, setIsAddLeaderModalOpen] = React.useState(false);
+      const [toasts, setToasts] = React.useState([]); // State for managing toasts
+
+      // Function to add a new toast notification
+      const showToast = (message, type = "info") => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+      };
+
+      // Function to dismiss a toast notification
+      const dismissToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+      };
+
+      // Fetch initial data from Supabase
+      React.useEffect(() => {
+        (async () => {
+          setLoading(true); setError(null);
+          try {
+            const [lRes, cRes, iRes] = await Promise.all([
+              supabase.from('leaders').select('*').order('name'),
+              supabase.from('categories').select('*').order('id'),
+              supabase.from('initiatives').select('*')
+            ]);
+            if (lRes.error) throw lRes.error; if (cRes.error) throw cRes.error; if (iRes.error) throw iRes.error;
+            setLeaders(lRes.data || []); setCategories(cRes.data || []); setInitiatives(iRes.data || []);
+          } catch (err) { 
+            setError("Error al cargar datos: " + err.message); 
+            showToast("Error al cargar datos: " + err.message, "error");
+          } finally { 
+            setLoading(false); 
+          }
+        })();
+      }, []);
+
+      // Handle saving an initiative (create or update)
+      const handleSaveInitiative = async (newData, categoryId, leaderId) => {
+        const existing = initiatives.find(i => i.category_id === categoryId && i.leader_id === leaderId);
+        try {
+            if (existing) {
+                const { data, error:err } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status }).eq('id', existing.id).select();
+                if (err) throw err;
+                if (data) setInitiatives(prev => prev.map(i => i.id === existing.id ? data[0] : i));
+            } else {
+                const { data, error:err } = await supabase.from('initiatives').insert([{ ...newData, category_id: categoryId, leader_id: leaderId }]).select();
+                if (err) throw err;
+                if (data) setInitiatives(prev => [...prev, data[0]]);
+            }
+        } catch (err) { 
+          console.error("Error saving initiative:", err);
+          throw err; // Re-throw to be caught by InitiativeCell's error handling
+        }
+      };
+
+      // Handle deleting an initiative
+      const handleDeleteInitiative = async (initiativeId) => {
+        try {
+          const { error: err } = await supabase.from('initiatives').delete().eq('id', initiativeId);
+          if (err) throw err;
+          setInitiatives(prev => prev.filter(i => i.id !== initiativeId));
+        } catch (err) {
+          console.error("Error deleting initiative:", err);
+          throw err; // Re-throw to be caught by InitiativeCell's error handling
+        }
+      };
+
+      // Handle adding a new leader
+      const handleAddLeader = async (name) => {
+        const { data, error:err } = await supabase.from("leaders").insert([{ name }]).select();
+        if (err) throw err;
+        if (data) setLeaders(prev => [...prev, ...data].sort((a,b) => a.name.localeCompare(b.name)));
+      };
+
+      // Display error message if data loading fails
+      if (error) return (
+        <div className="p-4 h-full flex items-center justify-center">
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md max-w-md" role="alert">
+            <p className="font-bold">Error</p><p className="text-sm">{error}</p>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="flex flex-col h-full p-2 sm:p-3">
+          {/* Toast Container */}
+          <div className="toast-container">
+            {toasts.map(toast => (
+              <Toast key={toast.id} id={toast.id} message={toast.message} type={toast.type} onDismiss={dismissToast} />
+            ))}
+          </div>
+
+          {/* Header Section */}
+          <header className="w-full mb-2 text-center">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-700 tracking-tight">
+              <i className="fas fa-trophy mr-1.5 text-amber-400"></i>
+              Gestión de Iniciativas 
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-cyan-500">Líderes 2025</span>
+            </h1>
+          </header>
+          
+          {/* Main Content Area (conditionally rendered based on loading state) */}
+          {loading ? (
+            <div className="flex-grow overflow-hidden">
+              <TableSkeleton numCategories={categories.length || 3} numLeaders={leaders.length || 6}/>
+            </div>
+            ) : (
+            <>
+              {/* Initiative Summary */}
+              <InitiativeSummary initiatives={initiatives} leaders={leaders} categories={categories} isLoading={loading} />
+              
+              {/* Table Subtitle */}
+              <h2 className="text-base sm:text-lg font-semibold text-slate-700 mb-1.5 px-1">Matriz de Iniciativas Estratégicas</h2>
+
+              {/* Main Table Container */}
+              <div className="flex-grow overflow-hidden bg-white shadow-lg rounded-lg">
+                <div className="overflow-auto h-full"> 
+                  {(categories.length === 0 && leaders.length === 0 && !loading) ? (
+                    // Empty state message when no data
+                    <div className="h-full flex flex-col items-center justify-center text-slate-500 p-6">
+                      <i className="fas fa-folder-open fa-3x mb-3 text-sky-500"></i>
+                      <p className="text-lg font-medium">¡Todo listo para empezar!</p>
+                      <p className="text-sm text-center">Agrega líderes y categorías para visualizar la matriz y gestionar las iniciativas.</p>
+                      <button 
+                        onClick={() => setIsAddLeaderModalOpen(true)} 
+                        className="mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-md shadow hover:shadow-lg transition-all duration-200 ease-in-out flex items-center text-sm"
+                      >
+                        <i className="fas fa-user-plus mr-2"></i>
+                        Comenzar agregando un Líder
+                      </button>
+                    </div>
+                  ) : (
+                    // This is the fix: use a ternary operator to explicitly return the table or null
+                    (categories.length > 0 || leaders.length > 0) ? (
+                      // Usar table-fixed para que los anchos de columna sean respetados
+                      <table className="table-fixed border-collapse w-full min-w-[600px] sm:min-w-[700px]">
+                        <thead className="sticky top-0 z-20 bg-white shadow-sm">
+                          <tr>
+                            <th className="border-b-2 border-sky-200 p-2 bg-sky-50 text-left text-[10px] sm:text-[11px] font-semibold uppercase text-sky-700 tracking-wider sticky left-0 z-10 w-[150px] sm:w-[170px] shadow-sm">Líder</th>
+                            {categories.map(cat => (
+                              <th key={cat.id} className="border-b-2 border-sky-200 p-2 bg-sky-50 text-left text-[10px] sm:text-[11px] font-semibold uppercase text-sky-700 tracking-wider w-[170px] sm:w-[200px] break-words">
+                                {cat.name} 
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {leaders.map((ldr, index) => (
+                            // Alternating row colors: white and light pastel green (emerald-50)
+                            <tr key={ldr.id} className={`h-[64px] ${index % 2 === 0 ? 'bg-white' : 'bg-emerald-50'} hover:bg-sky-50/40 transition-colors duration-100`}>
+                              <td className="border-b border-slate-200 p-1.5 sm:p-2 font-medium text-xs text-sky-700 sticky left-0 bg-inherit z-0 shadow-sm">
+                                <div className="line-clamp-1-sim">{ldr.name}</div>
+                              </td>
+                              {categories.map(cat => {
+                                const cellInitiative = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
+                                return (
+                                  <td key={cat.id} className="border-b border-slate-200 p-1 align-top">
+                                    <InitiativeCell
+                                      initiative={cellInitiative}
+                                      onSave={updatedData => handleSaveInitiative(updatedData, cat.id, ldr.id)}
+                                      onDelete={handleDeleteInitiative}
+                                      showToast={showToast}
+                                    />
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : null // Explicitly return null if no categories/leaders and not loading
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Footer Section (Add Leader Button) */}
+          {!loading && (
+            <footer className="pt-2 pb-1 text-center">
+              <button 
+                onClick={() => setIsAddLeaderModalOpen(true)} 
+                className="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1.5 px-3 rounded-md shadow hover:shadow-md transition-all duration-150 ease-in-out flex items-center mx-auto text-xs transform hover:scale-105"
+              >
+                <i className="fas fa-user-plus mr-1.5 text-xs"></i>
+                Agregar Líder
+              </button>
+            </footer>
+          )}
+
+          {/* Add Leader Modal */}
+          <AddLeaderModal 
+            isOpen={isAddLeaderModalOpen} 
+            onClose={() => setIsAddLeaderModalOpen(false)}
+            onAddLeader={handleAddLeader}
+            showToast={showToast}
+          />
+        </div>
+      );
+    }
+
+    // Render the App component into the root container
+    const rootElement = document.getElementById("root-container");
     const root = ReactDOM.createRoot(rootElement);
     root.render(<App />);
   </script>
