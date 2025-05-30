@@ -221,8 +221,7 @@
       const [editing, setEditing] = React.useState(false);
       const [title, setTitle] = React.useState(initiative?.title || '');
       const [status, setStatus] = React.useState(initiative?.status || 'No Iniciado');
-      // New state for document URL
-      const [documentUrl, setDocumentUrl] = React.useState(initiative?.document_url || '');
+      // documentUrl state removed as per request
       const [isSaving, setIsSaving] = React.useState(false);
       const [showConfirmDelete, setShowConfirmDelete] = React.useState(false); // State for delete confirmation
 
@@ -230,7 +229,7 @@
       React.useEffect(() => {
         setTitle(initiative?.title || '');
         setStatus(initiative?.status || 'No Iniciado');
-        setDocumentUrl(initiative?.document_url || ''); // Update document URL state
+        // documentUrl state update removed
       }, [initiative]);
 
       // Handle saving an initiative
@@ -241,8 +240,8 @@
         }
         setIsSaving(true);
         try {
-          // Pass document_url to onSave
-          await onSave({ ...initiative, title: title.trim(), status, document_url: documentUrl.trim() });
+          // document_url removed from onSave
+          await onSave({ ...initiative, title: title.trim(), status });
           setEditing(false);
           showToast("Iniciativa guardada con éxito.", "success");
         } catch (error) {
@@ -283,12 +282,7 @@
               placeholder="Título breve..."
               className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
             />
-            <input
-              value={documentUrl}
-              onChange={e => setDocumentUrl(e.target.value)}
-              placeholder="URL del documento (opcional)"
-              className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
-            />
+            {/* documentUrl input field removed */}
             <select
               value={status}
               onChange={e => setStatus(e.target.value)}
@@ -317,7 +311,7 @@
               )}
               <button
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded py-0.5 px-1.5 text-[11px] font-medium transition-all duration-150"
-                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); setDocumentUrl(initiative?.document_url || ''); }}
+                onClick={() => { setEditing(false); setTitle(initiative?.title || ''); setStatus(initiative?.status || 'No Iniciado'); /* setDocumentUrl(initiative?.document_url || ''); removed */ }}
                 disabled={isSaving}
               >
                 Cancelar
@@ -362,14 +356,7 @@
             <>
               <h4 className="text-lg font-semibold leading-tight flex items-center">
                 {initiative.title}
-                {/* Document link icon */}
-                {initiative.document_url && (
-                  <a href={initiative.document_url} target="_blank" rel="noopener noreferrer" 
-                     className="ml-1 text-sky-500 hover:text-sky-700 transition-colors" 
-                     title="Ver documento" onClick={e => e.stopPropagation()}>
-                    <i className="fas fa-file-alt text-[10px]"></i>
-                  </a>
-                )}
+                {/* Document link icon removed */}
               </h4>
               <div className={`initiative-card-status px-1.5 py-0.5 rounded-full inline-block self-start mt-0.5 border ${displayStyle.border} ${displayStyle.text} ${displayStyle.bg.replace('100', '200').replace('200','300').replace('slate-200','slate-300')} `}>
                 <i className={`fas ${displayStyle.icon} mr-1 text-[9px] opacity-70`}></i>
@@ -594,13 +581,13 @@
         const existing = initiatives.find(i => i.category_id === categoryId && i.leader_id === leaderId);
         try {
             if (existing) {
-                // Include document_url in the update operation
-                const { data, error:err } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status, document_url: newData.document_url }).eq('id', existing.id).select();
+                // document_url removed from the update operation
+                const { data, error:err } = await supabase.from('initiatives').update({ title: newData.title, status: newData.status }).eq('id', existing.id).select();
                 if (err) throw err;
                 if (data) setInitiatives(prev => prev.map(i => i.id === existing.id ? data[0] : i));
             } else {
-                // Include document_url in the insert operation
-                const { data, error:err } = await supabase.from('initiatives').insert([{ ...newData, category_id: categoryId, leader_id: leaderId, document_url: newData.document_url }]).select();
+                // document_url removed from the insert operation
+                const { data, error:err } = await supabase.from('initiatives').insert([{ ...newData, category_id: categoryId, leader_id: leaderId }]).select();
                 if (err) throw err;
                 if (data) setInitiatives(prev => [...prev, data[0]]);
             }
@@ -684,7 +671,7 @@
                       >
                         <i className="fas fa-user-plus mr-2"></i>
                         Comenzar agregando un Líder
-                      </button>
+                                              </button>
                     </div>
                   ) : (
                     // This is the fix: use a ternary operator to explicitly return the table or null
@@ -706,7 +693,8 @@
                             // Alternating row colors: white and light pastel green (emerald-50)
                             <tr key={ldr.id} className={`h-[64px] ${index % 2 === 0 ? 'bg-white' : 'bg-emerald-50'} hover:bg-sky-50/40 transition-colors duration-100`}>
                               <td className="border-b border-slate-200 p-1.5 sm:p-2 font-medium text-xs text-sky-700 sticky left-0 bg-inherit z-0 shadow-sm">
-                                <div className="line-clamp-1-sim text-lg font-semibold leading-snug flex items-center">{ldr.name}</div>
+                                {/* Leader name font size reduced from text-lg to text-base */}
+                                <div className="line-clamp-1-sim text-base font-semibold leading-snug flex items-center">{ldr.name}</div>
                               </td>
                               {categories.map(cat => {
                                 const cellInitiative = initiatives.find(i => i.category_id === cat.id && i.leader_id === ldr.id);
